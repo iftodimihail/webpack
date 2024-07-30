@@ -1,32 +1,29 @@
 const path = require("path");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const { ModuleFederationPlugin } = require("webpack").container;
 
 module.exports = {
   // entry: "./src/index.js", -> single bundle: SPA
-  entry: {
-    "hello-world": "./src/hello-world.js",
-    kiwi: "./src/kiwi.js",
-  },
+  entry: "./src/kiwi.js",
   output: {
-    filename: "[name].js",
+    filename: "[name].[contenthash].js", //  name: the entrypoint file name - splitting; contenthash = MD5 hash. browser caching
     path: path.resolve(__dirname, "./dist"),
-    publicPath: "",
-    clean: {
-      // manage build cleaning
-      dry: true,
-      keep: /\.css/,
-    },
+    publicPath: "http://localhost:9002/",
+    // clean: {
+    //   // manage build cleaning
+    //   dry: true,
+    //   keep: /\.css/,
+    // },
   },
-  mode: "development",
-  devServer: {
-    port: 9000,
-    static: {
-      directory: path.resolve(__dirname, "./dist"),
-    },
-    devMiddleware: {
-      index: "index.html",
-      writeToDisk: true,
+  mode: "production",
+  // used for extracting common dependencies while code splitting
+  optimization: {
+    splitChunks: {
+      chunks: "all",
+      minSize: 3000,
+      automaticNameDelimiter: "_",
     },
   },
   // handle assets
@@ -47,20 +44,13 @@ module.exports = {
         type: "asset/source",
       },
       {
-        test: /\.css$/,
-        // import loaders
-        // css-loader: reads the contents of the css file and returns the contents
-        // style-loader: takes the css and injects it to the page using style tags
-        use: ["style-loader", "css-loader"],
-      },
-      {
         test: /\.scss$/,
         // loaders order matters
         // webpack process loaders from right to left
         // 1st: sass-loader converts scss to css
         // 2nd: css-loader reads the css content
         // 3rd: style-loaders injects the style to the page
-        use: ["style-loader", "css-loader", "sass-loader"],
+        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
       },
       {
         test: /\.js$/,
@@ -80,20 +70,26 @@ module.exports = {
     ],
   },
   plugins: [
-    new CleanWebpackPlugin(),
-    new HtmlWebpackPlugin({
-      filename: "hello-world.html",
-      chunks: ["hello-world"], // chunks name are the ones specified in the entry object
-      title: "Hello world",
-      template: "src/page-template.hbs",
-      description: "Some description",
+    new MiniCssExtractPlugin({
+      filename: "[name].[contenthash].css",
     }),
+    new CleanWebpackPlugin(),
+    // Code splitting
     new HtmlWebpackPlugin({
       filename: "kiwi.html",
-      chunks: ["kiwi"],
       title: "Kiwi",
       template: "src/page-template.hbs",
       description: "Kiwi",
+    }),
+    new ModuleFederationPlugin({
+      name: "KiwiApp",
+      filename: "remoteEntry.js",
+      exposes: {
+        "./KiwiPage": "./src/components/kiwi-page/kiwi-page.js",
+      },
+      remotes: {
+        HelloWorldApp: "HelloWorldApp@http://localhost:9001/remoteEntry.js",
+      },
     }),
   ],
 };

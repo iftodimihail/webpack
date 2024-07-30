@@ -2,17 +2,15 @@ const path = require("path");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const { ModuleFederationPlugin } = require("webpack").container;
 
 module.exports = {
   // entry: "./src/index.js", -> single bundle: SPA
-  entry: {
-    "hello-world": "./src/hello-world.js",
-    kiwi: "./src/kiwi.js",
-  },
+  entry: "./src/hello-world.js",
   output: {
     filename: "[name].[contenthash].js", //  name: the entrypoint file name - splitting; contenthash = MD5 hash. browser caching
     path: path.resolve(__dirname, "./dist"),
-    publicPath: "/static/",
+    publicPath: "http://localhost:9001/",
     // clean: {
     //   // manage build cleaning
     //   dry: true,
@@ -25,32 +23,12 @@ module.exports = {
     splitChunks: {
       chunks: "all",
       minSize: 3000,
+      automaticNameDelimiter: "_",
     },
   },
   // handle assets
   module: {
     rules: [
-      {
-        test: /\.(png|jpg)$/, // image rule
-        type: "asset",
-        parser: {
-          dataUrlCondition: {
-            // condition for using either asset/inline or asset/resource
-            maxSize: 3 * 1024, // 3 kilobytes
-          },
-        },
-      },
-      {
-        test: /\.txt/,
-        type: "asset/source",
-      },
-      {
-        test: /\.css$/,
-        // import loaders
-        // css-loader: reads the contents of the css file and returns the contents
-        // style-loader: takes the css and injects it to the page using style tags (previously)
-        use: [MiniCssExtractPlugin.loader, "css-loader"],
-      },
       {
         test: /\.scss$/,
         // loaders order matters
@@ -85,17 +63,19 @@ module.exports = {
     // Code splitting
     new HtmlWebpackPlugin({
       filename: "hello-world.html",
-      chunks: ["hello-world"], // chunks name are the ones specified in the entry object
       title: "Hello world",
       template: "src/page-template.hbs",
       description: "Some description",
     }),
-    new HtmlWebpackPlugin({
-      filename: "kiwi.html",
-      chunks: ["kiwi"],
-      title: "Kiwi",
-      template: "src/page-template.hbs",
-      description: "Kiwi",
+    new ModuleFederationPlugin({
+      name: "HelloWorldApp",
+      filename: "remoteEntry.js",
+      exposes: {
+        "./HelloWorldButton":
+          "./src/components/hello-world-button/hello-world-button.js",
+        "./HelloWorldPage":
+          "./src/components/hello-world-page/hello-world-page.js",
+      },
     }),
   ],
 };
