@@ -12,11 +12,11 @@ module.exports = {
     filename: "[name].js",
     path: path.resolve(__dirname, "./dist"),
     publicPath: "",
-    // clean: {
-    //   // manage build cleaning
-    //   dry: true,
-    //   keep: /\.css/,
-    // },
+    clean: {
+      // manage build cleaning
+      dry: true,
+      keep: /\.css/,
+    },
   },
   mode: "development",
   devServer: {

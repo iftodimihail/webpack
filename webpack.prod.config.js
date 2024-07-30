@@ -12,7 +12,7 @@ module.exports = {
   output: {
     filename: "[name].[contenthash].js", //  name: the entrypoint file name - splitting; contenthash = MD5 hash. browser caching
     path: path.resolve(__dirname, "./dist"),
-    publicPath: "",
+    publicPath: "/static/",
     // clean: {
     //   // manage build cleaning
     //   dry: true,
